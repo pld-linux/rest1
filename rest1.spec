@@ -1,32 +1,42 @@
 #
 # Conditional build:
-%bcond_without	apidocs		# do not build and package API docs
-%bcond_without	static_libs	# don't build static libraries
+%bcond_without	apidocs		# gi-docgen based API documentation
+%bcond_with	libsoup3	# libsoup3 instead of libsoup 2.x
+%bcond_without	static_libs	# static library
 
-%define		apiver	0.7
+%define		apiver	1.0
 Summary:	A library for access to RESTful web services
 Summary(pl.UTF-8):	Biblioteka dostępu do REST-owych serwisów WWW
-Name:		rest
-Version:	0.8.1
+Name:		rest1
+Version:	0.9.1
 Release:	1
 License:	LGPL v2
 Group:		Libraries
-Source0:	http://ftp.gnome.org/pub/GNOME/sources/rest/0.8/%{name}-%{version}.tar.xz
-# Source0-md5:	ece4547298a81105f307369d73c21b9d
-URL:		http://www.gnome.org/
-BuildRequires:	autoconf >= 2.63
-BuildRequires:	automake >= 1:1.11
-BuildRequires:	glib2-devel >= 1:2.24
+Source0:	https://download.gnome.org/sources/rest/0.9/rest-%{version}.tar.xz
+# Source0-md5:	b997b83232be3814a1b78530c5700df9
+URL:		https://www.gnome.org/
+BuildRequires:	glib2-devel >= 1:2.44
 BuildRequires:	gobject-introspection-devel >= 0.6.7
-BuildRequires:	gtk-doc >= 1.13
-BuildRequires:	libsoup-gnome-devel >= 2.26.0
-BuildRequires:	libtool >= 2:2.2.6
+%{?with_apidocs:BuildRequires:	gi-docgen >= 2021.6}
+BuildRequires:	json-glib-devel
+%if %{with libsoup3}
+BuildRequires:	libsoup3-devel >= 3.0
+%else
+BuildRequires:	libsoup-devel >= 2.42
+%endif
 BuildRequires:	libxml2-devel >= 2
+BuildRequires:	meson >= 0.56
+BuildRequires:	ninja >= 1.5
 BuildRequires:	pkgconfig
+BuildRequires:	rpmbuild(macros) >= 1.736
 BuildRequires:	tar >= 1:1.22
 BuildRequires:	xz
-Requires:	glib2 >= 1:2.24
-Requires:	libsoup-gnome >= 2.26.0
+Requires:	glib2 >= 1:2.44
+%if %{with libsoup3}
+Requires:	libsoup3 >= 3.0
+%else
+Requires:	libsoup >= 2.42
+%endif
 Suggests:	ca-certificates
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
 
@@ -53,8 +63,13 @@ Summary:	Header files for rest library
 Summary(pl.UTF-8):	Pliki nagłówkowe biblioteki rest
 Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
-Requires:	glib2-devel >= 1:2.24
-Requires:	libsoup-devel >= 2.26.0
+Requires:	glib2-devel >= 1:2.44
+Requires:	json-glib-devel
+%if %{with libsoup3}
+Requires:	libsoup3-devel >= 3.0
+%else
+Requires:	libsoup-devel >= 2.42
+%endif
 Requires:	libxml2-devel >= 2
 
 %description devel
@@ -88,29 +103,29 @@ API documentation for rest library.
 Dokumentacja API biblioteki rest.
 
 %prep
-%setup -q
+%setup -q -n rest-%{version}
 
 %build
-%{__libtoolize}
-%{__aclocal}
-%{__autoconf}
-%{__autoheader}
-%{__automake}
-%configure \
-	--disable-silent-rules \
-	%{__enable_disable apidocs gtk-doc} \
-	%{__enable_disable static_libs static} \
-	--with-html-dir=%{_gtkdocdir} \
-	--with-ca-certificates=/etc/certs/ca-certificates.crt
-%{__make}
+%meson build \
+	%{!?with_static_libs:--default-library=shared} \
+	-Dexamples=false \
+	%{!?with_apidocs:-Dgtk_doc=false} \
+	%{!?with_libsoup3:-Dsoup2=true}
+
+# -Dvapi=true not enabled, rest-1.0 is included in vala 0.56
+
+%ninja_build -C build
 
 %install
 rm -rf $RPM_BUILD_ROOT
-%{__make} install \
-	DESTDIR=$RPM_BUILD_ROOT
 
-%{!?with_apidocs:%{__rm} -r $RPM_BUILD_ROOT%{_gtkdocdir}}
-%{__rm} $RPM_BUILD_ROOT%{_libdir}/*.la
+%ninja_install -C build
+
+%if %{with apidocs}
+# FIXME: where to package gi-docgen generated docs?
+install -d $RPM_BUILD_ROOT%{_gtkdocdir}
+%{__mv} $RPM_BUILD_ROOT%{_docdir}/librest-1.0 $RPM_BUILD_ROOT%{_gtkdocdir}
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -120,13 +135,13 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(644,root,root,755)
-%doc AUTHORS README
+%doc AUTHORS NEWS README.md
 %attr(755,root,root) %{_libdir}/librest-%{apiver}.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/librest-%{apiver}.so.0
 %attr(755,root,root) %{_libdir}/librest-extras-%{apiver}.so.*.*.*
 %attr(755,root,root) %ghost %{_libdir}/librest-extras-%{apiver}.so.0
-%{_libdir}/girepository-1.0/Rest-0.7.typelib
-%{_libdir}/girepository-1.0/RestExtras-0.7.typelib
+%{_libdir}/girepository-1.0/Rest-%{apiver}.typelib
+%{_libdir}/girepository-1.0/RestExtras-%{apiver}.typelib
 
 %files devel
 %defattr(644,root,root,755)
@@ -148,5 +163,5 @@ rm -rf $RPM_BUILD_ROOT
 %if %{with apidocs}
 %files apidocs
 %defattr(644,root,root,755)
-%{_gtkdocdir}/rest-%{apiver}
+%{_gtkdocdir}/librest-%{apiver}
 %endif
