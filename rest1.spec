@@ -1,7 +1,7 @@
 #
 # Conditional build:
 %bcond_without	apidocs		# gi-docgen based API documentation
-%bcond_with	libsoup3	# libsoup3 instead of libsoup 2.x
+%bcond_with	libsoup2	# libsoup 2.x instead of libsoup3 (discouraged, better use rest 0.7 for soup2)
 %bcond_without	static_libs	# static library
 
 %define		apiver	1.0
@@ -9,7 +9,7 @@ Summary:	A library for access to RESTful web services
 Summary(pl.UTF-8):	Biblioteka dostępu do REST-owych serwisów WWW
 Name:		rest1
 Version:	0.9.1
-Release:	1
+Release:	2
 License:	LGPL v2
 Group:		Libraries
 Source0:	https://download.gnome.org/sources/rest/0.9/rest-%{version}.tar.xz
@@ -19,10 +19,10 @@ BuildRequires:	glib2-devel >= 1:2.44
 BuildRequires:	gobject-introspection-devel >= 0.6.7
 %{?with_apidocs:BuildRequires:	gi-docgen >= 2021.6}
 BuildRequires:	json-glib-devel
-%if %{with libsoup3}
-BuildRequires:	libsoup3-devel >= 3.0
-%else
+%if %{with libsoup2}
 BuildRequires:	libsoup-devel >= 2.42
+%else
+BuildRequires:	libsoup3-devel >= 3.0
 %endif
 BuildRequires:	libxml2-devel >= 2
 BuildRequires:	meson >= 0.56
@@ -33,10 +33,10 @@ BuildRequires:	rpmbuild(macros) >= 1.736
 BuildRequires:	tar >= 1:1.22
 BuildRequires:	xz
 Requires:	glib2 >= 1:2.44
-%if %{with libsoup3}
-Requires:	libsoup3 >= 3.0
-%else
+%if %{with libsoup2}
 Requires:	libsoup >= 2.42
+%else
+Requires:	libsoup3 >= 3.0
 %endif
 Suggests:	ca-certificates
 BuildRoot:	%{tmpdir}/%{name}-%{version}-root-%(id -u -n)
@@ -66,10 +66,10 @@ Group:		Development/Libraries
 Requires:	%{name} = %{version}-%{release}
 Requires:	glib2-devel >= 1:2.44
 Requires:	json-glib-devel
-%if %{with libsoup3}
-Requires:	libsoup3-devel >= 3.0
-%else
+%if %{with libsoup2}
 Requires:	libsoup-devel >= 2.42
+%else
+Requires:	libsoup3-devel >= 3.0
 %endif
 Requires:	libxml2-devel >= 2
 
@@ -111,7 +111,7 @@ Dokumentacja API biblioteki rest.
 	%{!?with_static_libs:--default-library=shared} \
 	-Dexamples=false \
 	%{!?with_apidocs:-Dgtk_doc=false} \
-	%{!?with_libsoup3:-Dsoup2=true}
+	%{?with_libsoup2:-Dsoup2=true}
 
 # -Dvapi=true not enabled, rest-1.0 is included in vala 0.56
 
