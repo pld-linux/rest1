@@ -9,7 +9,7 @@ Summary:	A library for access to RESTful web services
 Summary(pl.UTF-8):	Biblioteka dostępu do REST-owych serwisów WWW
 Name:		rest1
 Version:	0.9.1
-Release:	4
+Release:	5
 License:	LGPL v2
 Group:		Libraries
 Source0:	https://download.gnome.org/sources/rest/0.9/rest-%{version}.tar.xz
@@ -107,7 +107,7 @@ Dokumentacja API biblioteki rest.
 %setup -q -n rest-%{version}
 
 %build
-%meson build \
+%meson \
 	%{!?with_static_libs:--default-library=shared} \
 	-Dexamples=false \
 	%{!?with_apidocs:-Dgtk_doc=false} \
@@ -115,12 +115,12 @@ Dokumentacja API biblioteki rest.
 
 # -Dvapi=true not enabled, rest-1.0 is included in vala 0.56
 
-%ninja_build -C build
+%meson_build
 
 %install
 rm -rf $RPM_BUILD_ROOT
 
-%ninja_install -C build
+%meson_install
 
 %if %{with apidocs}
 install -d $RPM_BUILD_ROOT%{_gidocdir}
