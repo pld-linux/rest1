@@ -9,7 +9,7 @@ Summary:	A library for access to RESTful web services
 Summary(pl.UTF-8):	Biblioteka dostępu do REST-owych serwisów WWW
 Name:		rest1
 Version:	0.9.1
-Release:	3
+Release:	4
 License:	LGPL v2
 Group:		Libraries
 Source0:	https://download.gnome.org/sources/rest/0.9/rest-%{version}.tar.xz
